@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Tejarat Bank task management: built on the NexusCore packages (see nuget.config and
+       ./packages), like TMPB-API for Post Bank. To take a newer Core, copy its .nupkg files
+       into ./packages and raise NexusCoreVersion below. -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TejaratBank_API</RootNamespace>
+    <NexusCoreVersion>0.1.0.1405072501</NexusCoreVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Same modules as TMPB: identity, task management, chat, notifications -->
+    <PackageReference Include="NexusCore.Infrastructure" Version="$(NexusCoreVersion)" />
+    <PackageReference Include="Chat.Api" Version="$(NexusCoreVersion)" />
+    <PackageReference Include="Notifications.Api" Version="$(NexusCoreVersion)" />
+    <PackageReference Include="Notifications.Infrastructure" Version="$(NexusCoreVersion)" />
+    <PackageReference Include="Nexus.TaskManagement" Version="$(NexusCoreVersion)" />
+    <PackageReference Include="Nexus.TaskManagement.Infrastructure" Version="$(NexusCoreVersion)" />
+    <PackageReference Include="Nexus.Integrations.TaskNotifications" Version="$(NexusCoreVersion)" />
+
+    <!-- Tejarat only: deputies / units, companies, positions, manager / subordinates, and the
+         task reports that follow them -->
+    <PackageReference Include="Nexus.Organization" Version="$(NexusCoreVersion)" />
+    <PackageReference Include="Nexus.Organization.Infrastructure" Version="$(NexusCoreVersion)" />
+    <PackageReference Include="Nexus.OrgStructure" Version="$(NexusCoreVersion)" />
+    <PackageReference Include="Nexus.OrgStructure.Infrastructure" Version="$(NexusCoreVersion)" />
+    <PackageReference Include="Nexus.Integrations.TaskReporting" Version="$(NexusCoreVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Serilog" Version="4.4.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="System.Text.Json" Version="8.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="db\**" CopyToOutputDirectory="Never" />
+  </ItemGroup>
+
+</Project>

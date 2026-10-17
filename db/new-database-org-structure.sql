@@ -1,0 +1,199 @@
+-- Organization + OrgStructure schemas for a NEW TejaratBank database (no organization /
+-- org_structure tables yet), generated from the NexusCore 0.1.0.1405072501 packages' current model.
+-- Records every migration as applied, so later versions upgrade with the upgrade-*.sql scripts.
+-- Run after the API has started once (the identity tables must exist), or after its core scripts.
+--   sqlcmd -S <server> -d TejaratBank -I -i db/new-database-org-structure.sql
+-- Not needed when Database:InitializeOrgStructureSchema is true (the default): the API does the same.
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'organization.OrganizationUnits', N'U') IS NOT NULL OR OBJECT_ID(N'org_structure.Companies', N'U') IS NOT NULL
+BEGIN
+    RAISERROR(N'The organization tables already exist: use the upgrade-*.sql scripts instead.', 16, 1);
+    SET NOEXEC ON;
+END;
+GO
+
+IF SCHEMA_ID(N'organization') IS NULL EXEC(N'CREATE SCHEMA [organization];');
+GO
+
+
+CREATE TABLE [organization].[OrganizationUnits] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [Name] nvarchar(160) NOT NULL,
+    [ManagerUserId] uniqueidentifier NULL,
+    [IsActive] bit NOT NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [CreatedByUserId] uniqueidentifier NULL,
+    [ModifiedAtUtc] datetimeoffset NULL,
+    [ModifiedByUserId] uniqueidentifier NULL,
+    CONSTRAINT [PK_OrganizationUnits] PRIMARY KEY ([Id])
+);
+GO
+GO
+
+IF SCHEMA_ID(N'org_structure') IS NULL EXEC(N'CREATE SCHEMA [org_structure];');
+GO
+
+
+CREATE TABLE [org_structure].[Companies] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [Name] nvarchar(200) NOT NULL,
+    [Code] nvarchar(40) NOT NULL,
+    [Description] nvarchar(1000) NULL,
+    [ManagerUserId] uniqueidentifier NULL,
+    [IsActive] bit NOT NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [CreatedByUserId] uniqueidentifier NULL,
+    [ModifiedAtUtc] datetimeoffset NULL,
+    [ModifiedByUserId] uniqueidentifier NULL,
+    CONSTRAINT [PK_Companies] PRIMARY KEY ([Id])
+);
+GO
+
+
+CREATE TABLE [org_structure].[CompanyUnits] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NOT NULL,
+    [UnitId] uniqueidentifier NOT NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [CreatedByUserId] uniqueidentifier NULL,
+    [ModifiedAtUtc] datetimeoffset NULL,
+    [ModifiedByUserId] uniqueidentifier NULL,
+    CONSTRAINT [PK_CompanyUnits] PRIMARY KEY ([Id])
+);
+GO
+
+
+CREATE TABLE [org_structure].[Honorifics] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [Title] nvarchar(40) NOT NULL,
+    [SortOrder] int NOT NULL,
+    [IsActive] bit NOT NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [CreatedByUserId] uniqueidentifier NULL,
+    [ModifiedAtUtc] datetimeoffset NULL,
+    [ModifiedByUserId] uniqueidentifier NULL,
+    CONSTRAINT [PK_Honorifics] PRIMARY KEY ([Id])
+);
+GO
+
+
+CREATE TABLE [org_structure].[Positions] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [Title] nvarchar(120) NOT NULL,
+    [ParentPositionId] uniqueidentifier NULL,
+    [IsActive] bit NOT NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [CreatedByUserId] uniqueidentifier NULL,
+    [ModifiedAtUtc] datetimeoffset NULL,
+    [ModifiedByUserId] uniqueidentifier NULL,
+    CONSTRAINT [PK_Positions] PRIMARY KEY ([Id])
+);
+GO
+
+
+CREATE TABLE [org_structure].[UserAssignments] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [UserId] uniqueidentifier NOT NULL,
+    [CompanyId] uniqueidentifier NOT NULL,
+    [UnitId] uniqueidentifier NULL,
+    [PositionId] uniqueidentifier NULL,
+    [ManagerUserId] uniqueidentifier NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [CreatedByUserId] uniqueidentifier NULL,
+    [ModifiedAtUtc] datetimeoffset NULL,
+    [ModifiedByUserId] uniqueidentifier NULL,
+    CONSTRAINT [PK_UserAssignments] PRIMARY KEY ([Id])
+);
+GO
+
+
+CREATE TABLE [org_structure].[UserHonorifics] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [UserId] uniqueidentifier NOT NULL,
+    [HonorificId] uniqueidentifier NOT NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [CreatedByUserId] uniqueidentifier NULL,
+    [ModifiedAtUtc] datetimeoffset NULL,
+    [ModifiedByUserId] uniqueidentifier NULL,
+    CONSTRAINT [PK_UserHonorifics] PRIMARY KEY ([Id])
+);
+GO
+
+
+CREATE UNIQUE INDEX [IX_Companies_TenantId_Code] ON [org_structure].[Companies] ([TenantId], [Code]);
+GO
+
+
+CREATE INDEX [IX_CompanyUnits_CompanyId] ON [org_structure].[CompanyUnits] ([CompanyId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_CompanyUnits_TenantId_UnitId] ON [org_structure].[CompanyUnits] ([TenantId], [UnitId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_Honorifics_TenantId_Title] ON [org_structure].[Honorifics] ([TenantId], [Title]);
+GO
+
+
+CREATE INDEX [IX_Positions_ParentPositionId] ON [org_structure].[Positions] ([ParentPositionId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_Positions_TenantId_Title] ON [org_structure].[Positions] ([TenantId], [Title]);
+GO
+
+
+CREATE INDEX [IX_UserAssignments_CompanyId] ON [org_structure].[UserAssignments] ([CompanyId]);
+GO
+
+
+CREATE INDEX [IX_UserAssignments_ManagerUserId] ON [org_structure].[UserAssignments] ([ManagerUserId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_UserAssignments_TenantId_UserId] ON [org_structure].[UserAssignments] ([TenantId], [UserId]);
+GO
+
+
+CREATE INDEX [IX_UserAssignments_UnitId] ON [org_structure].[UserAssignments] ([UnitId]);
+GO
+
+
+CREATE INDEX [IX_UserHonorifics_HonorificId] ON [org_structure].[UserHonorifics] ([HonorificId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_UserHonorifics_TenantId_UserId] ON [org_structure].[UserHonorifics] ([TenantId], [UserId]);
+GO
+GO
+
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+    CREATE TABLE [__EFMigrationsHistory] ([MigrationId] nvarchar(150) NOT NULL, [ProductVersion] nvarchar(32) NOT NULL, CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId]));
+GO
+
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261013111237_RemoveUnitCodeParent')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261013111237_RemoveUnitCodeParent', N'8.0.0');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261013111847_Baseline_OrgStructure')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261013111847_Baseline_OrgStructure', N'8.0.0');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261013112238_AddPositionParent')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261013112238_AddPositionParent', N'8.0.0');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261013122348_RemovePositionCode')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261013122348_RemovePositionCode', N'8.0.0');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261014111846_AddTeamsAndTitles')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261014111846_AddTeamsAndTitles', N'8.0.0');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261014130145_RemoveOrgTeams')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261014130145_RemoveOrgTeams', N'8.0.0');
+GO
+
+SET NOEXEC OFF;
+GO
