@@ -81,14 +81,23 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
 ```
 
-## 7. Reminders and recurring tasks
+## 7. Giving tasks only to one's own level and below
+
+`OrgStructure:LimitTaskAssignment` is `true` in `appsettings.json`: in the org chart, a user makes
+responsible for a task only themselves, the people below them, and the people at their own level
+(except someone in a higher position of their own deputy) - never anyone above. People with no
+place in the chart yet are not limited (and anyone may give them tasks); the permission «ارجاع
+فعالیت به همه‌ی سطوح سازمانی» lifts the limit for its holders (the Administrator role has it).
+Set it to `false` in `appsettings.Production.json` to let anyone give tasks to anyone.
+
+## 8. Reminders and recurring tasks
 
 `TaskManagement:Scheduler:Enabled` is `true` in `appsettings.json`: recurring tasks, due-soon /
 overdue reminders and SMS held back during the quiet hours are sent by this API. Set it to
 `false` in `appsettings.Production.json` only on a second server of the same database that should
 not send them (one is enough; two would not send anything twice).
 
-## 8. Taking a newer NexusCore
+## 9. Taking a newer NexusCore
 
 The NexusCore modules come as packages from `./packages` (see `nuget.config`), built in the Core
 repository with `eng/pack-core-modules.ps1`. To update:

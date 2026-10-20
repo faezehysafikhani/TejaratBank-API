@@ -1,6 +1,6 @@
 -- Unit (deputy) positions for TejaratBank-API: each deputy's own positions, in its order, and
 -- who holds them (several per person). Generated from the EF Core migration AddUnitPositions in the
--- NexusCore Nexus.OrgStructure.Infrastructure package (0.1.0.1405072801-mahdi).
+-- NexusCore Nexus.OrgStructure.Infrastructure package (0.1.0.1405072802-mahdi).
 -- Also turns today's placements into deputy positions (each deputy gets the positions its people
 -- have, and each person holds theirs).
 -- Idempotent: safe to run again. For a database already upgraded with 1 and 2 (run those first).

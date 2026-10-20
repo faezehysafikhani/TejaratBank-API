@@ -1,5 +1,5 @@
 -- Organization + OrgStructure schemas for a NEW TejaratBank database (no organization /
--- org_structure tables yet), generated from the NexusCore 0.1.0.1405072801-mahdi packages' current model.
+-- org_structure tables yet), generated from the NexusCore 0.1.0.1405072802-mahdi packages' current model.
 -- Records every migration as applied, so later versions upgrade with the upgrade-*.sql scripts.
 -- Run after the API has started once (the identity tables must exist), or after its core scripts.
 --   sqlcmd -S <server> -d TejaratBank -I -i db/new-database-org-structure.sql
