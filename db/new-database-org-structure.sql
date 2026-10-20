@@ -1,5 +1,5 @@
 -- Organization + OrgStructure schemas for a NEW TejaratBank database (no organization /
--- org_structure tables yet), generated from the NexusCore 0.1.0.1405072806-mahdi packages' current model.
+-- org_structure tables yet), generated from the NexusCore 0.1.0.1405072807-mahdi packages' current model.
 -- Records every migration as applied, so later versions upgrade with the upgrade-*.sql scripts.
 -- Run after the API has started once (the identity tables must exist), or after its core scripts.
 --   sqlcmd -S <server> -d TejaratBank -I -i db/new-database-org-structure.sql
@@ -186,6 +186,7 @@ CREATE TABLE [org_structure].[UnitPositions] (
     [SortOrder] int NOT NULL,
     [Code] nvarchar(40) NOT NULL,
     [CompanyId] uniqueidentifier NOT NULL,
+    [ParentPostId] uniqueidentifier NULL,
     [CreatedAtUtc] datetimeoffset NOT NULL,
     [CreatedByUserId] uniqueidentifier NULL,
     [ModifiedAtUtc] datetimeoffset NULL,
@@ -218,6 +219,10 @@ GO
 
 
 CREATE INDEX [IX_UnitPositions_UnitId] ON [org_structure].[UnitPositions] ([UnitId]);
+GO
+
+
+CREATE INDEX [IX_UnitPositions_ParentPostId] ON [org_structure].[UnitPositions] ([ParentPostId]);
 GO
 
 
@@ -325,6 +330,8 @@ IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'202
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261020183212_AddTaskPosts', N'8.0.0');
 IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261020185002_AddPostActings')
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261020185002_AddPostActings', N'8.0.0');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261020200132_AddPostParent')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261020200132_AddPostParent', N'8.0.0');
 GO
 
 SET NOEXEC OFF;

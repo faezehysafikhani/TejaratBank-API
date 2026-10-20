@@ -75,7 +75,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 | Database | Script |
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
-| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql` |
+| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql` |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -113,6 +113,15 @@ responsible for a task only themselves, the people below them, and the people at
 place in the chart yet are not limited (and anyone may give them tasks); the permission «ارجاع
 فعالیت به همه‌ی سطوح سازمانی» lifts the limit for its holders (the Administrator role has it).
 Set it to `false` in `appsettings.Production.json` to let anyone give tasks to anyone.
+
+## 7.2 Posts under posts
+
+A post can sit under another post of the same deputy (or, for posts directly in the company,
+another of those), at any depth: e.g. «کارشناس» under «معاون». The holder of the post above is
+then the manager of the post's holder: they see their tasks in reports, may give them tasks with
+the limit above on, and see the post in «کارتابل جانشینی» when it falls vacant - but get no
+rights over the chart. A vacant post above is passed over to the next one up (or the deputy's
+manager). Set in the chart's post panel («پست مافوق»); a post with posts under it can't be removed.
 
 ## 8. Reminders and recurring tasks
 
