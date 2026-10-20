@@ -75,7 +75,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 | Database | Script |
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
-| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql` |
+| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql` |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -99,6 +99,11 @@ post or a new person takes it, the post's tasks go with it. A vacant post can't 
 task, and someone with no post can't be given one. When the API starts it gives tasks that have
 no posts yet to their people's main posts (people with no post stay on them as people). Set it
 to `false` in `appsettings.Production.json` to give tasks to people again.
+
+When a post falls vacant, its open tasks show in «کارتابل جانشینی» to the managers above the post
+and to holders of the permission «مدیریت کارتابل جانشینی». They may put another post of the
+company in charge of it (سرپرستی): its holder sees those tasks and comments on them as a stand-in
+(«جانشین ...»), nothing more. When someone takes the vacant post the stand-in ends by itself.
 
 ## 7.1 Giving tasks only to one's own level and below
 
