@@ -1,5 +1,5 @@
 -- Organization + OrgStructure schemas for a NEW TejaratBank database (no organization /
--- org_structure tables yet), generated from the NexusCore 0.1.0.1405072804-mahdi packages' current model.
+-- org_structure tables yet), generated from the NexusCore 0.1.0.1405072805-mahdi packages' current model.
 -- Records every migration as applied, so later versions upgrade with the upgrade-*.sql scripts.
 -- Run after the API has started once (the identity tables must exist), or after its core scripts.
 --   sqlcmd -S <server> -d TejaratBank -I -i db/new-database-org-structure.sql
@@ -243,6 +243,30 @@ CREATE TABLE [org_structure].[PositionCompanies] (
 GO
 
 
+CREATE TABLE [org_structure].[TaskPosts] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [TaskId] uniqueidentifier NOT NULL,
+    [PostId] uniqueidentifier NOT NULL,
+    [Role] int NOT NULL,
+    [HolderUserId] uniqueidentifier NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [CreatedByUserId] uniqueidentifier NULL,
+    [ModifiedAtUtc] datetimeoffset NULL,
+    [ModifiedByUserId] uniqueidentifier NULL,
+    CONSTRAINT [PK_TaskPosts] PRIMARY KEY ([Id])
+);
+GO
+
+
+CREATE INDEX [IX_TaskPosts_PostId] ON [org_structure].[TaskPosts] ([PostId]);
+GO
+
+
+CREATE UNIQUE INDEX [IX_TaskPosts_TenantId_TaskId_PostId_Role] ON [org_structure].[TaskPosts] ([TenantId], [TaskId], [PostId], [Role]);
+GO
+
+
 CREATE INDEX [IX_PositionCompanies_CompanyId] ON [org_structure].[PositionCompanies] ([CompanyId]);
 GO
 
@@ -274,6 +298,8 @@ IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'202
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261020164434_AddPositionCompanies', N'8.0.0');
 IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261020181412_AddPosts')
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261020181412_AddPosts', N'8.0.0');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261020183212_AddTaskPosts')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261020183212_AddTaskPosts', N'8.0.0');
 GO
 
 SET NOEXEC OFF;

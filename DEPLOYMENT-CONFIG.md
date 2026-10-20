@@ -75,7 +75,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 | Database | Script |
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
-| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql` |
+| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql` |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -91,7 +91,16 @@ Posts (upgrade 5): each post has a code (unique in its company) and one person. 
 several people held in a deputy becomes one post each; people placed directly in a company with
 a position get a post there (the head's included); every post gets a number of its company.
 
-## 7. Giving tasks only to one's own level and below
+## 7. Tasks are given to posts
+
+`OrgStructure:AssignTasksToPosts` is `true` in `appsettings.json`: a task's creator, responsible
+people and access list are posts, and their holders are the task's people. When someone leaves a
+post or a new person takes it, the post's tasks go with it. A vacant post can't be given a new
+task, and someone with no post can't be given one. When the API starts it gives tasks that have
+no posts yet to their people's main posts (people with no post stay on them as people). Set it
+to `false` in `appsettings.Production.json` to give tasks to people again.
+
+## 7.1 Giving tasks only to one's own level and below
 
 `OrgStructure:LimitTaskAssignment` is `true` in `appsettings.json`: in the org chart, a user makes
 responsible for a task only themselves, the people below them, and the people at their own level
