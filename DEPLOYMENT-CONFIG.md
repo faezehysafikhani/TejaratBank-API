@@ -75,7 +75,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 | Database | Script |
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
-| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql` |
+| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql` |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -86,6 +86,10 @@ directly in the company with its position that has no superior («رئیس کل�
 upgrade gives each position the companies it is used in, and gives today's heads that position.
 Positions it found with no superior keep none: give each one its superior (only the head's
 position stays without one).
+
+Posts (upgrade 5): each post has a code (unique in its company) and one person. A position
+several people held in a deputy becomes one post each; people placed directly in a company with
+a position get a post there (the head's included); every post gets a number of its company.
 
 ## 7. Giving tasks only to one's own level and below
 
