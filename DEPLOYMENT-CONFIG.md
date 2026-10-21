@@ -105,6 +105,10 @@ and to holders of the permission «مدیریت کارتابل جانشینی».
 company in charge of it (سرپرستی): its holder sees those tasks and comments on them as a stand-in
 («جانشین ...»), nothing more. When someone takes the vacant post the stand-in ends by itself.
 
+Disabling a user's account takes them out of their posts: the posts fall vacant and their tasks
+go to «کارتابل جانشینی». Their deputy and set manager stay; enabled again, they need to be put
+back in a post.
+
 ## 7.1 Giving tasks only to one's own level and below
 
 `OrgStructure:LimitTaskAssignment` is `true` in `appsettings.json`: in the org chart, a user makes
