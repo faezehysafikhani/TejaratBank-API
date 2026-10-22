@@ -112,8 +112,12 @@ back in a post.
 ## 7.1 Giving tasks only to one's own level and below
 
 `OrgStructure:LimitTaskAssignment` is `true` in `appsettings.json`: in the org chart, a user makes
-responsible for a task only themselves, the people below them, and the people at their own level
-(except someone in a higher position of their own deputy) - never anyone above. People with no
+responsible for a task only themselves, the people below them, the people of their own deputy at
+their level or lower, and the people of the company at their own level (an expert to an expert of
+another deputy; not someone in a higher position of their own deputy) - never anyone above. A
+person's level is that of their position: how many superior positions («سمت مافوق», set in «سمت‌ها»)
+are above it up to «رئیس کل» - the highest position they hold; someone with no position is measured
+by how many managers are above them in the chart. People with no
 place in the chart yet are not limited (and anyone may give them tasks); the permission «ارجاع
 فعالیت به همه‌ی سطوح سازمانی» lifts the limit for its holders (the Administrator role has it).
 Set it to `false` in `appsettings.Production.json` to let anyone give tasks to anyone.
