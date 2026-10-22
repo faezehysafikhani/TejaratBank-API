@@ -127,6 +127,32 @@ the limit above on, and see the post in «کارتابل جانشینی» when i
 rights over the chart. A vacant post above is passed over to the next one up (or the deputy's
 manager). Set in the chart's post panel («پست مافوق»); a post with posts under it can't be removed.
 
+## 7.3 Each company on its own
+
+`OrgStructure:LimitToOwnCompany` is `true` in `appsettings.json`: everyone is kept to their own
+company - the companies they are placed in or head. Others' people are not in their user lists,
+chat, work teams or reports; they cannot be given a task, access to one or a message; the org chart
+and its panels show and change only their own company; «مدیریت همهٔ وظایف» shows only the tasks
+of their own people. Within the company, anyone may message anyone (a manager above too), and
+tasks follow 7.1 (an expert may give one to an expert of another deputy, never to someone above).
+Someone with no place in any company reaches nobody but themselves; people with no place yet stay
+in the user list, so they can be placed. The permission «دسترسی به همه‌ی شرکت‌ها» lifts the limit
+for its holders (the Administrator role has it). Set it to `false` in `appsettings.Production.json`
+to open the companies to one another.
+
+## 7.4 The switches at a glance
+
+Each one is on its own: turn off what is not wanted, the rest keeps working.
+
+| Setting (`OrgStructure:`) | On in this API | What it does | Lifted for holders of |
+| --- | --- | --- | --- |
+| `LimitTaskAssignment` | yes | tasks only to one's own level and below (7.1) | «ارجاع فعالیت به همه‌ی سطوح سازمانی» |
+| `AssignTasksToPosts` | yes | tasks given to posts, «کارتابل جانشینی» (7) | «مدیریت کارتابل جانشینی» (every vacant post) |
+| `LimitToOwnCompany` | yes | everyone kept to their own company (7.3) | «دسترسی به همه‌ی شرکت‌ها» |
+
+Work teams are always kept to one's own deputy with the org structure; «افزودن اعضای سایر
+معاونت‌ها به تیم کاری» lifts that (still within one's own company when 7.3 is on).
+
 ## 8. Reminders and recurring tasks
 
 `TaskManagement:Scheduler:Enabled` is `true` in `appsettings.json`: recurring tasks, due-soon /
