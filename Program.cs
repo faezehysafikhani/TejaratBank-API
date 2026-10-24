@@ -210,7 +210,8 @@ var jwtOptions =
         .Get<JwtOptions>()
     ?? new JwtOptions();
 
-if (builder.Environment.IsProduction())
+// Anywhere but local development (Staging and UAT hold real data too).
+if (!builder.Environment.IsDevelopment())
 {
     // Placeholder values shipped as defaults/examples in source - never acceptable as the real
     // production signing key. A production host must not start with a missing, placeholder, or
@@ -229,7 +230,7 @@ if (builder.Environment.IsProduction())
         throw new InvalidOperationException(
             "Jwt:SigningKey is missing, a development placeholder, or shorter than 32 characters. " +
             "Set a real secret via the Jwt__SigningKey environment variable (or another production " +
-            "configuration source) before starting this service in a production environment.");
+            "configuration source) before starting this service outside local development.");
     }
 }
 

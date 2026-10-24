@@ -24,6 +24,11 @@ which is the normal case for a real install (outside an IDE launch profile).
 
 ## 2. Set the JWT signing key
 
+> **Every environment except local Development** (Staging, UAT and so on) now requires a real
+> `Jwt__SigningKey`, and a database created there needs `Identity__AdminPassword` (at least 12
+> characters, not `Admin@12345`). Only `ASPNETCORE_ENVIRONMENT=Development` may use the built-in
+> development key and the default `admin` password.
+
 Never put a real signing key in any `appsettings*.json` file — it must not be committed. Set it
 as an environment variable instead:
 
