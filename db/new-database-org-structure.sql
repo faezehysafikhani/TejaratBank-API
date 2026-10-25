@@ -1,5 +1,5 @@
 -- Organization + OrgStructure schemas for a NEW TejaratBank database (no organization /
--- org_structure tables yet), generated from the NexusCore 0.1.0.1405072807-mahdi packages' current model.
+-- org_structure tables yet), generated from the NexusCore 0.1.0.1405072816-mahdi packages' current model.
 -- Records every migration as applied, so later versions upgrade with the upgrade-*.sql scripts.
 -- Run after the API has started once (the identity tables must exist), or after its core scripts.
 --   sqlcmd -S <server> -d TejaratBank -I -i db/new-database-org-structure.sql
@@ -126,6 +126,24 @@ CREATE TABLE [org_structure].[UserHonorifics] (
     [ModifiedByUserId] uniqueidentifier NULL,
     CONSTRAINT [PK_UserHonorifics] PRIMARY KEY ([Id])
 );
+GO
+
+CREATE TABLE [org_structure].[CustomCharts] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NOT NULL,
+    [Name] nvarchar(200) NOT NULL,
+    [Description] nvarchar(1000) NULL,
+    [Selection] nvarchar(max) NOT NULL,
+    [ShowHolders] bit NOT NULL,
+    [CreatedAtUtc] datetimeoffset NOT NULL,
+    [CreatedByUserId] uniqueidentifier NULL,
+    [ModifiedAtUtc] datetimeoffset NULL,
+    [ModifiedByUserId] uniqueidentifier NULL,
+    CONSTRAINT [PK_CustomCharts] PRIMARY KEY ([Id])
+);
+GO
+
+CREATE INDEX [IX_CustomCharts_TenantId] ON [org_structure].[CustomCharts] ([TenantId]);
 GO
 
 
@@ -332,6 +350,8 @@ IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'202
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261020185002_AddPostActings', N'8.0.0');
 IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261020200132_AddPostParent')
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261020200132_AddPostParent', N'8.0.0');
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261025101107_AddCustomCharts')
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES (N'20261025101107_AddCustomCharts', N'8.0.0');
 GO
 
 SET NOEXEC OFF;

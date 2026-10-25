@@ -75,7 +75,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 | Database | Script |
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
-| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql` |
+| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-custom-charts.sql` |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -156,6 +156,17 @@ Each one is on its own: turn off what is not wanted, the rest keeps working.
 
 Work teams are always kept to one's own deputy with the org structure; «افزودن اعضای سایر
 معاونت‌ها به تیم کاری» lifts that (still within one's own company when 7.3 is on).
+
+## 7.5 Charts drawn by hand («طراحی چارت دلخواه»)
+
+A tab next to «چارت سازمانی» (Settings → ساختار سازمانی). Holders of the permission «طراحی چارت
+سازمانی دلخواه» tick companies, deputies and posts, see the chart as they go and save it under a
+name (with or without who holds each post). Everyone who may read the org structure sees the saved
+charts and downloads them as PDF; who holds each post is always the current holder. With 7.3 on,
+people see only the charts that show something of their company, and make or change charts of
+their own company alone. The Administrator role has the permission; give it to others as needed
+(it brings «مشاهده ساختار سازمانی» with it). The charts are kept in `org_structure.CustomCharts`
+(the API creates it; `db/upgrade-9-custom-charts.sql` for a database upgraded by hand).
 
 ## 8. Reminders and recurring tasks
 
