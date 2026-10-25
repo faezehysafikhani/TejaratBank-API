@@ -26,6 +26,13 @@ Opens `http://localhost:5271/swagger`. Development defaults: SQL Server on this 
 `TejaratBank` (created on first run), user `admin` / `Admin@12345`. Point TMPBUI at this address
 (`VITE_DEV_API_BASE_URL=http://localhost:5271`).
 
+## Packages
+
+`packages/` holds the NexusCore `.nupkg` files this API is built from, with their checksums in
+`packages/SHA256SUMS.txt` (`cd packages && sha256sum -c SHA256SUMS.txt`). A package is changed only
+by replacing it with one built from the Core repository (`eng/pack-core-modules.ps1`, which writes
+the checksum file and can sign the packages).
+
 ## Deploy
 
 See [DEPLOYMENT-CONFIG.md](DEPLOYMENT-CONFIG.md): CORS origin, JWT signing key, connection string,

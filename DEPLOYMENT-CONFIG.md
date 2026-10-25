@@ -81,6 +81,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
 | Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql` |
+| Sign-in sessions (security update, any version before `0.1.0.1405080301-security1`) | `db/upgrade-9-refresh-token-family.sql` (the API also adds these two columns at start-up when `Database:SeedOnStartup` is `true`) |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -174,10 +175,122 @@ not send them (one is enough; two would not send anything twice).
 The NexusCore modules come as packages from `./packages` (see `nuget.config`), built in the Core
 repository with `eng/pack-core-modules.ps1`. To update:
 
-1. Copy the new `.nupkg` files of the packages this API uses into `./packages`.
+1. Copy the new `.nupkg` files of the packages this API uses into `./packages` (and the
+   `SHA256SUMS.txt` that comes with them).
 2. Set `<NexusCoreVersion>` in `TejaratBank-API.csproj` to the new version.
 3. Build and deploy. The schema changes of Task Management, Notifications and Chat are applied by
    the modules at start-up; those of the organization modules as described in section 6.
+
+## 10. Security settings
+
+These keys are read from `appsettings.Production.json` or from environment variables (a `:` in a
+key is `__` in a variable name). Everything has a safe default; the ones in **bold** need a value
+at a real install.
+
+### 10.1 Reverse proxy, client addresses and rate limits
+
+Rate limits (sign-in, refresh, password recovery, SMS, uploads, writes) are on in this API. They
+count by the caller's address, so the API has to know the real one:
+
+```json
+{
+  "NexusCore": {
+    "ForwardedHeaders": {
+      "KnownProxies": ["10.0.0.5"],
+      "KnownNetworks": ["10.0.1.0/24"],
+      "ForwardLimit": 1
+    }
+  }
+}
+```
+
+* **`KnownProxies` / `KnownNetworks`** — the address(es) of the reverse proxy (IIS ARR, nginx) in
+  front of this API. `X-Forwarded-For` is believed **only** when the request really comes from one
+  of them; sent anywhere else it is ignored. Empty (the default) trusts nothing but this machine:
+  behind a proxy every user would then share the proxy's address and one quota, so set it.
+* The proxy must send `X-Forwarded-For` and `X-Forwarded-Proto`, and pass `Set-Cookie` through.
+* Limits per minute (`NexusCore:RateLimiting:<Policy>:PermitLimit` / `WindowMinutes`): sign-in and
+  refresh 10, password recovery 5 per 15 min, SMS test 5 per 5 min, whole API 600 (counted per
+  signed-in user, per address when anonymous, so a branch behind one NAT address does not share a
+  single quota). Watch the 429 answers for two weeks and adjust.
+* Several API instances behind a load balancer count separately (the limiter is in memory).
+
+### 10.2 Sign-in sessions and the refresh-token cookie
+
+* The browser keeps the refresh token in the cookie `nexus_rt` (`HttpOnly; Secure; SameSite=Strict;
+  Path=/api/identity/auth`). Serve the front end and the API from **one address** (the proxy sends
+  `/api` and `/hubs` here); with different origins set `Cors:AllowedOrigins` and see the
+  front end's README.
+* HTTPS is required outside Development (the cookie is `Secure`).
+* `Jwt:AccessTokenMinutes` is `15`. A sign-in lasts at most `Identity:Session:RefreshTokenDays`
+  (`14`) days; a refresh does not extend it. A refresh token that was already exchanged and is shown
+  again after `Identity:Session:ReuseGraceSeconds` (`10`) seconds ends the whole sign-in and is
+  recorded as `identity.refresh_token_reuse` in the audit log.
+* Transition for clients that are not browsers: `Identity:Session:ReturnRefreshTokenInBody` and
+  `AcceptRefreshTokenInBody` are `true`. When no such client exists, set both to `false`.
+* After the first deployment every user signs in once more (old sessions lived in `localStorage`).
+* Changing the password or the mobile number ends all the person's other sessions.
+* Changing the mobile number needs the password and a code sent by SMS to the **new** number: the
+  SMS panel must be set up. The text is the template «کد تأیید تغییر شماره موبایل» (`phone_change`).
+
+### 10.3 Encryption keys (SMS API key, LDAP password)
+
+```json
+{
+  "DataProtection": {
+    "KeysPath": "D:\\Keys\\TejaratBank",
+    "ApplicationName": "TejaratBank",
+    "ProtectWithDpapi": true
+  }
+}
+```
+
+Without `KeysPath` the keys may live only in memory and every restart makes the stored SMS key and
+LDAP password unreadable (they have to be entered again). Use a folder **outside** the application
+folder, writable by the application pool identity only, and **back it up**. On Windows the keys are
+also encrypted at rest with DPAPI (machine scope). **Before the first deployment of this version,
+copy the keys the application pool user has now** (`%LOCALAPPDATA%\ASP.NET\DataProtection-Keys` of
+that user, or the registry location for pools without a profile) into this folder, so the stored
+secrets stay readable. Several instances share one folder.
+
+### 10.4 Where administrators can point the server
+
+* **SMS gateway address** — only the provider's own host (e.g. `api.kavenegar.com`, https), or a
+  host you list: `Security:OutboundAddresses:AllowedHosts` (`["sms.bank.local", "*.gw.bank.local"]`;
+  listed hosts may be inside the network; `AllowHttp` allows plain http for them). Changing the
+  address drops the stored key, so it has to be typed again. If outgoing calls go through a proxy,
+  list the proxy's host too.
+* **LDAP server** — `Security:OutboundAddresses:LdapAllowedPorts` (`389, 636, 3268, 3269`) and
+  optionally `LdapAllowedHosts`. Loopback and link-local addresses are never accepted.
+* The generic settings API no longer reads or writes `Notifications.*`, `Identity.*` and
+  `TaskManagement.*` keys; those have their own screens.
+
+### 10.5 Organization separation
+
+Every query of the identity, organization, org-structure, task, chat and notification tables is
+confined to the signed-in user's organization by the database layer, as a second line behind the
+conditions in the code. Holders of `tenants.manage_all`, background services and sign-in are not
+confined. To switch it off in an emergency: `Security:TenantFilter:Enabled` = `false`, or one
+context only: `Security:TenantFilter:DisabledContexts` = `["ChatDbContext"]`.
+
+### 10.6 Responses, logs, limits
+
+* HSTS is sent outside Development; responses of `/api/identity/*` carry `Cache-Control: no-store`.
+* **IIS log**: SignalR sends its token in the query string (`/hubs/...?access_token=`). In IIS
+  Manager → Logging → Select Fields, turn **off** *URI Query (cs-uri-query)*, so tokens stay out of
+  the log. Do the same on the reverse proxy.
+* A request body is at most about 21 MB; an upload at most 20 MB (and the size set in the system
+  settings, 200 KB by default). Page sizes are capped at 200.
+* The front end reports Content-Security-Policy violations to `POST /api/platform/csp-report`
+  (logged as warnings, `NexusCore.SecurityReports`) while the policy is in report-only mode.
+* Password rules: at least 10 characters, three kinds of characters, no common passwords. The
+  sign-in CAPTCHA has six letters and digits.
+
+### 10.7 Packages
+
+Checksums of the packages in `./packages` are in `packages/SHA256SUMS.txt`; compare before use
+(`sha256sum -c SHA256SUMS.txt` in that folder, or `Get-FileHash` on Windows). Packages built by the
+Core pipeline are signed when a signing certificate is configured there (`dotnet nuget verify`).
 
 ---
 

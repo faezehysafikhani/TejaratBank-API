@@ -4,6 +4,8 @@ using NexusCore.Application.Common;
 using NexusCore.Application;
 using NexusCore.Application.Endpoints;
 using NexusCore.Application.Identity.Permissions;
+using NexusCore.Application.Security;
+using NexusCore.Application.Security.RateLimiting;
 
 using NexusCore.Infrastructure;
 using NexusCore.Infrastructure.Identity;
@@ -39,6 +41,7 @@ using Nexus.OrgStructure.Infrastructure;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -135,6 +138,46 @@ builder.Services.AddAuthorization(options =>
                     new PermissionRequirement(permission.Name)));
     }
 });
+
+
+// ======================================================
+// Rate limiting and reverse-proxy headers
+// ======================================================
+
+// Login, refresh, password recovery, SMS test, uploads and writes carry rate-limit policies in
+// the NexusCore modules; they only take effect when the limiter is registered (and added to the
+// pipeline below). Limits: NexusCore:RateLimiting. Proxies: NexusCore:ForwardedHeaders.
+builder.Services.AddNexusCoreRateLimiting(builder.Configuration);
+builder.Services.AddNexusCoreForwardedHeaders(builder.Configuration);
+builder.Services.AddNexusCoreRequestLimits();
+
+
+// ======================================================
+// Data protection keys
+// ======================================================
+
+// The SMS API key and the LDAP password are stored encrypted with these keys. Without a fixed
+// location, IIS may keep them in memory only and every recycle makes those secrets unreadable.
+// Keys live outside the application folder; on Windows they are encrypted at rest with DPAPI.
+var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+var dataProtection = builder.Services
+    .AddDataProtection()
+    .SetApplicationName(builder.Configuration["DataProtection:ApplicationName"] ?? "TejaratBank");
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    dataProtection.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+    if (OperatingSystem.IsWindows()
+        && builder.Configuration.GetValue("DataProtection:ProtectWithDpapi", true))
+    {
+        dataProtection.ProtectKeysWithDpapi(protectToLocalMachine: true);
+    }
+}
+else if (!builder.Environment.IsDevelopment())
+{
+    Console.WriteLine(
+        "WARNING: DataProtection:KeysPath is not set. Encryption keys may be lost on restart, " +
+        "which makes the stored SMS API key and LDAP password unreadable. See DEPLOYMENT-CONFIG.md.");
+}
 
 
 // ======================================================
@@ -323,13 +366,33 @@ var app = builder.Build();
 // Middleware
 // ======================================================
 
+// First: the real client address, believed only from the proxies in NexusCore:ForwardedHeaders.
+app.UseNexusCoreForwardedHeaders();
+
 app.UseSafeErrorResponses();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
 
 app.Use(async (context, next) =>
 {
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
     context.Response.Headers["X-Frame-Options"] = "DENY";
     context.Response.Headers["Referrer-Policy"] = "no-referrer";
+
+    // Tokens, sessions and one-time codes must not be kept by browsers or proxies.
+    if (context.Request.Path.StartsWithSegments("/api/identity"))
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["Cache-Control"] = "no-store";
+            context.Response.Headers["Pragma"] = "no-cache";
+            return Task.CompletedTask;
+        });
+    }
+
     await next();
 });
 
@@ -348,6 +411,9 @@ app.UseSerilogRequestLogging();
 
 app.UseAuthentication();
 
+// After authentication so signed-in users are counted per user, anonymous callers per address.
+app.UseNexusCoreRateLimiting();
+
 app.UseAuthorization();
 
 
@@ -365,6 +431,9 @@ app.MapGet("/", () =>
 // ======================================================
 
 app.MapIdentityEndpoints();
+
+// Content-Security-Policy violation reports from the browsers (the front end sends them here).
+app.MapSecurityReportEndpoints();
 Console.WriteLine(
     $"UserGroups Enabled: {builder.Configuration.IsUserGroupFeatureEnabled()}"
 );
@@ -399,9 +468,11 @@ app.MapChatEndpoints();
 // SignalR Hubs
 // ======================================================
 
-app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<ChatHub>("/hubs/chat")
+    .RequireRateLimiting(NexusRateLimitPolicies.Realtime);
 
-app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<NotificationHub>("/hubs/notifications")
+    .RequireRateLimiting(NexusRateLimitPolicies.Realtime);
 
 
 // ======================================================
