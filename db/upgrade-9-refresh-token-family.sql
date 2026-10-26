@@ -1,7 +1,7 @@
 -- Sign-in sessions for TejaratBank-API: refresh tokens belong to a family (one sign-in) and remember
 -- when they were exchanged, so a token that is used again after it was replaced ends the whole
 -- sign-in (identity.RefreshTokens.FamilyId / UsedAtUtc). Matches the EF Core migration
--- SecurityRefreshTokenFamily (NexusCore.Infrastructure) in the NexusCore 0.1.0.1405080302-security1 packages.
+-- SecurityRefreshTokenFamily (NexusCore.Infrastructure) in the NexusCore 0.1.0.1405080302-security2 packages.
 -- Idempotent: safe to run again. Both columns are nullable, so rows made before keep working
 -- (a row without a family counts as a family of its own).
 -- Not needed when Database:SeedOnStartup is true (the default): the API adds the columns at start-up.
