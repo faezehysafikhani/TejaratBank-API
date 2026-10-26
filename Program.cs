@@ -2,6 +2,7 @@ using System.Text;
 
 using NexusCore.Application.Common;
 using NexusCore.Application;
+using NexusCore.Application.Files;
 using NexusCore.Application.Endpoints;
 using NexusCore.Application.Identity.Permissions;
 using NexusCore.Application.Security;
@@ -150,6 +151,11 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddNexusCoreRateLimiting(builder.Configuration);
 builder.Services.AddNexusCoreForwardedHeaders(builder.Configuration);
 builder.Services.AddNexusCoreRequestLimits();
+
+// The same body limit under IIS in-process hosting, where Kestrel's limit does not apply and
+// IIS's own default (about 28.6 MB) would be the only one.
+builder.Services.Configure<IISServerOptions>(options =>
+    options.MaxRequestBodySize = UploadValidation.RequestBodyLimitBytes);
 
 
 // ======================================================

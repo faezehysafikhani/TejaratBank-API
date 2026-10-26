@@ -187,6 +187,14 @@ These keys are read from `appsettings.Production.json` or from environment varia
 key is `__` in a variable name). Everything has a safe default; the ones in **bold** need a value
 at a real install.
 
+* The site-wide values (session, rate limits, organization separation, log levels) are written
+  out in `appsettings.json`. To change one at a site, add only that key to
+  `appsettings.Production.json`, e.g. `"NexusCore": { "RateLimiting": { "Global": { "PermitLimit": 900 } } }`.
+* The per-site keys are already in `appsettings.Production.json` with empty, safe values: fill them
+  in there. Lists (`KnownProxies`, `KnownNetworks`, `AllowedHosts`, `LdapAllowedHosts`,
+  `DisabledContexts`) are set only in that file: configuration merges lists item by item, so a
+  list in two files would mix.
+
 ### 10.1 Reverse proxy, client addresses and rate limits
 
 Rate limits (sign-in, refresh, password recovery, SMS, uploads, writes) are on in this API. They
@@ -280,8 +288,13 @@ context only: `Security:TenantFilter:DisabledContexts` = `["ChatDbContext"]`.
 * **IIS log**: SignalR sends its token in the query string (`/hubs/...?access_token=`). In IIS
   Manager → Logging → Select Fields, turn **off** *URI Query (cs-uri-query)*, so tokens stay out of
   the log. Do the same on the reverse proxy.
-* A request body is at most about 21 MB; an upload at most 20 MB (and the size set in the system
-  settings, 200 KB by default). Page sizes are capped at 200.
+* **The API's own log**: ASP.NET Core's request log (`Microsoft.AspNetCore`) writes the full
+  address, query string and token included, so `appsettings.json` keeps it at `Warning`
+  (`Serilog:MinimumLevel:Override`). Every request is still logged once, without the query string.
+  Do not lower it in production.
+* A request body is at most about 21 MB, under Kestrel and under IIS in-process hosting alike; an
+  upload at most 20 MB (and the size set in the system settings, 200 KB by default). Page sizes are
+  capped at 200.
 * The front end reports Content-Security-Policy violations to `POST /api/platform/csp-report`
   (logged as warnings, `NexusCore.SecurityReports`) while the policy is in report-only mode.
 * Password rules: at least 10 characters, three kinds of characters, no common passwords. The
