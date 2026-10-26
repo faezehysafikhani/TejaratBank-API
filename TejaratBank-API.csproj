@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>TejaratBank_API</RootNamespace>
-    <NexusCoreVersion>0.1.0.1405080302-security2</NexusCoreVersion>
+    <NexusCoreVersion>0.1.0.1405080302-security3</NexusCoreVersion>
   </PropertyGroup>
 
   <ItemGroup>

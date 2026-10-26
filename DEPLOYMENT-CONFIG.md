@@ -81,7 +81,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
 | Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql` |
-| Sign-in sessions (security update, any version before `0.1.0.1405080302-security2`) | `db/upgrade-9-refresh-token-family.sql` (the API also adds these two columns at start-up when `Database:SeedOnStartup` is `true`) |
+| Sign-in sessions (security update, any version before `0.1.0.1405080302-security3`) | `db/upgrade-9-refresh-token-family.sql` (the API also adds these two columns at start-up when `Database:SeedOnStartup` is `true`) |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -226,8 +226,9 @@ count by the caller's address, so the API has to know the real one:
   (`14`) days; a refresh does not extend it. A refresh token that was already exchanged and is shown
   again after `Identity:Session:ReuseGraceSeconds` (`10`) seconds ends the whole sign-in and is
   recorded as `identity.refresh_token_reuse` in the audit log.
-* Transition for clients that are not browsers: `Identity:Session:ReturnRefreshTokenInBody` and
-  `AcceptRefreshTokenInBody` are `true`. When no such client exists, set both to `false`.
+* The refresh token only travels in the HttpOnly cookie: `Identity:Session:ReturnRefreshTokenInBody`
+  and `AcceptRefreshTokenInBody` are `false` by default. A client that cannot use cookies (a
+  script, a mobile app) needs both set to `true` again.
 * After the first deployment every user signs in once more (old sessions lived in `localStorage`).
 * Changing the password or the mobile number ends all the person's other sessions.
 * Changing the mobile number needs the password and a code sent by SMS to the **new** number: the
