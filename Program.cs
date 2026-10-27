@@ -4,6 +4,8 @@ using NexusCore.Application.Common;
 using NexusCore.Application;
 using NexusCore.Application.Endpoints;
 using NexusCore.Application.Identity.Permissions;
+using NexusCore.Application.Security;
+using NexusCore.Application.Security.RateLimiting;
 
 using NexusCore.Infrastructure;
 using NexusCore.Infrastructure.Identity;
@@ -39,6 +41,7 @@ using Nexus.OrgStructure.Infrastructure;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -161,6 +164,31 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 
+
+// ======================================================
+// Security: rate limits, client address behind a proxy, request size limits, key storage
+// ======================================================
+
+// Per-user / per-client request limits (NexusCore:RateLimiting); sign-in is limited per client address.
+builder.Services.AddNexusCoreRateLimiting(builder.Configuration);
+
+// Behind a reverse proxy, the real client address is believed only from
+// NexusCore:ForwardedHeaders:KnownProxies / KnownNetworks (empty: loopback only).
+builder.Services.AddNexusCoreForwardedHeaders(builder.Configuration);
+
+builder.Services.AddNexusCoreRequestLimits();
+
+// The keys that encrypt the SMS panel's API key and the LDAP password. With
+// DataProtection:KeysPath set they are kept in that folder, so they survive restarts and app
+// pool changes (the folder must be writable by the app pool and backed up with the database).
+var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    builder.Services.AddDataProtection()
+        .SetApplicationName("TejaratBank-API")
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+}
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -210,7 +238,7 @@ var jwtOptions =
         .Get<JwtOptions>()
     ?? new JwtOptions();
 
-if (builder.Environment.IsProduction())
+if (!builder.Environment.IsDevelopment())
 {
     // Placeholder values shipped as defaults/examples in source - never acceptable as the real
     // production signing key. A production host must not start with a missing, placeholder, or
@@ -322,7 +350,31 @@ var app = builder.Build();
 // Middleware
 // ======================================================
 
+// Behind a reverse proxy: the real client address, believed only from the configured proxies.
+app.UseNexusCoreForwardedHeaders();
+
 app.UseSafeErrorResponses();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+// Tokens, sessions and one-time codes must not be kept by browsers or proxies.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/identity"))
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["Cache-Control"] = "no-store";
+            context.Response.Headers["Pragma"] = "no-cache";
+            return Task.CompletedTask;
+        });
+    }
+
+    await next();
+});
 
 app.Use(async (context, next) =>
 {
@@ -347,6 +399,8 @@ app.UseSerilogRequestLogging();
 
 app.UseAuthentication();
 
+app.UseNexusCoreRateLimiting();
+
 app.UseAuthorization();
 
 
@@ -364,6 +418,9 @@ app.MapGet("/", () =>
 // ======================================================
 
 app.MapIdentityEndpoints();
+
+// Browser CSP violation reports (rate limited).
+app.MapSecurityReportEndpoints();
 Console.WriteLine(
     $"UserGroups Enabled: {builder.Configuration.IsUserGroupFeatureEnabled()}"
 );
@@ -398,9 +455,11 @@ app.MapChatEndpoints();
 // SignalR Hubs
 // ======================================================
 
-app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<ChatHub>("/hubs/chat")
+    .RequireRateLimiting(NexusRateLimitPolicies.Realtime);
 
-app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<NotificationHub>("/hubs/notifications")
+    .RequireRateLimiting(NexusRateLimitPolicies.Realtime);
 
 
 // ======================================================

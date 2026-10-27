@@ -176,6 +176,25 @@ repository with `eng/pack-core-modules.ps1`. To update:
 
 ---
 
+## 10. Security settings
+
+Since NexusCore `0.1.0.1405072818-mahdi`. All have safe defaults; at a real install set these:
+
+| Setting | Where | What |
+|---|---|---|
+| `Jwt__SigningKey` | environment variable (IIS: `web.config` `<environmentVariables>`) | the access-token key (section 2). Outside Development the API refuses to start without a real one (32+ characters). |
+| `Identity__AdminPassword` | environment variable | the first administrator's password on a new database (12+ characters, not `Admin@12345`). Not needed afterwards. |
+| `NexusCore:ForwardedHeaders:KnownProxies` / `KnownNetworks` | `appsettings.Production.json` | the reverse proxy / load balancer in front of the API (IP addresses, or CIDR networks such as `10.0.0.0/24`). Only from these is the real client address taken from `X-Forwarded-For` - it is what rate limits, sign-in protection and the audit log count by. Without a proxy (IIS serves the API itself) leave both empty. **With a proxy and nothing set here, every user shares the proxy's address, and the sign-in limit (10 per minute per address) is shared by everyone.** |
+| `DataProtection:KeysPath` | `appsettings.Production.json` | a folder (writable by the app pool, backed up) for the keys that encrypt the SMS panel's API key and the LDAP password. Empty: the keys stay in the app pool's profile and are lost with a new server or pool. After it is first set (or changed), enter the SMS API key and the LDAP password again once. |
+| `Identity:Session:ReturnRefreshTokenInBody` / `AcceptRefreshTokenInBody` | `appsettings.Production.json` | `true` (as shipped): the refresh token also travels in the response body - works over plain http. Once the site is served over **HTTPS** (front end and API on the same site), set both to `false`: the refresh token then lives only in an HttpOnly, Secure, SameSite=Strict cookie no script can read. Over plain http that cookie is not kept, and users would be signed out every 15 minutes. |
+| `NexusCore:RateLimiting` | `appsettings.Production.json` | per-user / per-address request limits (defaults: 600 requests a minute overall, 10 sign-ins a minute per address, 120 writes a minute). `Enabled: false` turns them off. |
+| `Security:OutboundAddresses:AllowedHosts` | `appsettings.Production.json` | extra SMS gateway host names besides the provider's own (the API calls no other address). |
+
+The API also sends HSTS over HTTPS, `Cache-Control: no-store` on `/api/identity`, limits request
+sizes, and receives the browser's CSP violation reports at `/api/platform/csp-report`.
+
+---
+
 ### What NOT to do
 - Don't edit `appsettings.json` (the base file) for a specific deployment — it's meant to stay
   environment-independent so it's identical across every install. Environment-specific values go
