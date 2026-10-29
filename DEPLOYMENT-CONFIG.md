@@ -75,7 +75,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 | Database | Script |
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
-| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql`, then `db/upgrade-10-org-nodes.sql`, then `db/upgrade-11-node-api.sql` |
+| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql`, then `db/upgrade-10-org-nodes.sql`, then `db/upgrade-11-node-api.sql`, then `db/upgrade-12-templates.sql` |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -109,6 +109,12 @@ an icon. Existing data keeps its meaning (order 0: still by name; the default co
 `db/upgrade-11-rollback.sql` undoes it. Putting a node under another node through
 `/api/org-structure/nodes` stays off until `OrgStructure:AllowNesting` is `true` (it is `false` in
 `appsettings.json`; turn it on only where the nested structure is being tried out).
+
+Templates (upgrade 12): structure templates get a column for a saved template's content
+(`StructureTemplates.Content`, empty for existing rows). Nothing else changes; secondary links and
+the built-in templates use tables upgrade 10 already made. `db/upgrade-12-rollback.sql` undoes it
+(templates saved from a company are lost). A built-in template with nested nodes («بانکی») is
+refused while `OrgStructure:AllowNesting` is `false`; «ساده» and «معاونتی» work either way.
 
 ## 7. Tasks are given to posts
 
