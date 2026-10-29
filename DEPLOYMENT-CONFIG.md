@@ -107,20 +107,54 @@ unit becomes a plain «واحد» node and each company's head post gets the hea
 Node API (upgrade 11): units get their order among the units beside them, node types a colour and
 an icon. Existing data keeps its meaning (order 0: still by name; the default colour and icon).
 `db/upgrade-11-rollback.sql` undoes it. Putting a node under another node through
-`/api/org-structure/nodes` stays off until `OrgStructure:AllowNesting` is `true` (it is `false` in
-`appsettings.json`; turn it on only where the nested structure is being tried out).
+`/api/org-structure/nodes` needs «what may sit under what» rules (`/node-type-rules`); with none, nodes
+stay at the top of their company, as before. (The temporary `OrgStructure:AllowNesting` switch of the
+trial phases is gone; an old `appsettings.json` that still has it is harmless.)
 
 Templates (upgrade 12): structure templates get a column for a saved template's content
 (`StructureTemplates.Content`, empty for existing rows). Nothing else changes; secondary links and
 the built-in templates use tables upgrade 10 already made. `db/upgrade-12-rollback.sql` undoes it
-(templates saved from a company are lost). A built-in template with nested nodes («بانکی») is
-refused while `OrgStructure:AllowNesting` is `false`; «ساده» and «معاونتی» work either way.
+(templates saved from a company are lost). A built-in template with nested nodes («بانکی») brings
+its own rules.
 
 Node details (upgrade 13): units get five optional columns (`NodeCode`, `LatinName`,
 `CorrespondenceTitle`, `Phone`, `Address`), empty for existing rows. The code column is named
 `NodeCode` on purpose: `check-upgrades.sql` recognises step 1 by the old `Code` column being gone.
 `db/upgrade-13-rollback.sql` undoes it. Importing nodes from an Excel/CSV file
 (`/api/org-structure/import/...`) accepts files up to 5 MB.
+
+### 6.1 Moving a production database to the dynamic structure
+
+Do this once, in this order. Nothing here changes what today's flat data means: every unit stays at
+the top of its company, every company keeps its head and the people keep their managers.
+
+1. **Back up** the `TejaratBank` database.
+2. **Rehearse on a copy** (staging, restored from that backup) with the same steps; do production only
+   when the copy passes step 6.
+3. **Before:** `sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/check-upgrades.sql` says which
+   step to start from. For step 10 also save the output of `db/check-upgrade-10.sql` (section A).
+4. **Run the missing steps in order** (each is safe to run again; each needs `-I`, and the ones with
+   Persian text `-f 65001`):
+   ```
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-10-org-nodes.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-11-node-api.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-12-templates.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-13-node-details.sql
+   ```
+   With `Database:InitializeOrgStructureSchema` true (the default) the API makes the same changes at
+   start-up; run the scripts when a DBA owns the schema.
+5. **After:** `db/check-upgrades.sql` must say all steps are applied, and `db/check-upgrade-10.sql`
+   section A must be identical to the one saved before (row counts and checksums), section B all zero.
+6. **Deploy the new NexusCore packages** (section 9) and start the API. Open the chart: it must look as
+   it did (flat companies, same heads, same managers). Then, in the UI, set a company's display level
+   to «پیشرفته» only where the new screens are wanted; nothing changes for the others.
+7. **Rules and templates** come after, as the organization decides: the «قواعد ساختار» tab (types and
+   what may sit under what), «ورود از اکسل», templates. Nothing nests until rules exist.
+
+**Undo**, newest first, only if needed (data made with the new features in the dropped columns and
+tables is lost): `db/upgrade-13-rollback.sql`, `db/upgrade-12-rollback.sql`,
+`db/upgrade-11-rollback.sql`, `db/upgrade-10-rollback.sql`. The table `organization.OrganizationUnits`
+keeps its name (the host checks it at start-up).
 
 ## 7. Tasks are given to posts
 
