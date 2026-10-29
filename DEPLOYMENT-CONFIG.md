@@ -81,6 +81,13 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
 ```
 
+To see which of these steps a database already has (read-only, changes nothing; it recognises each
+step by the tables and columns it adds and says which script to start from):
+
+```
+sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/check-upgrades.sql
+```
+
 Positions are per company, and a company's head is not chosen on the company: whoever is placed
 directly in the company with its position that has no superior («رئیس کل») is its head. The
 upgrade gives each position the companies it is used in, and gives today's heads that position.
