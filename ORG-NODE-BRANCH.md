@@ -22,7 +22,7 @@
 
 ## وضعیت فعلی
 - **فاز ۰ — پیش‌نیازها:** انجام شده است (تست‌های طلایی روی داده‌ی مسطح، مبنا و قواعد کار، این توضیح).
-- `1.2` — اسکریپت‌های دیتابیس: `db/upgrade-10-org-nodes.sql` (idempotent؛ ستون‌ها و جدول‌های ساختار گره + پر کردن داده‌ی فعلی)، `db/upgrade-10-rollback.sql` و `db/check-upgrade-10.sql` (شمارش و checksum قبل و بعد). نام جدول `organization.OrganizationUnits` و probe در `Program.cs` عوض نشده. **اجرا روی SQL Server هنوز راستی‌آزمایی نشده.** بسته‌ی جدید NexusCore هنوز در `packages` نیست.
+- `1.2` — اسکریپت‌های دیتابیس: `db/upgrade-10-org-nodes.sql` (idempotent؛ ستون‌ها و جدول‌های ساختار گره + پر کردن داده‌ی فعلی)، `db/upgrade-10-rollback.sql` و `db/check-upgrade-10.sql` (شمارش و checksum قبل و بعد). نام جدول `organization.OrganizationUnits` و probe در `Program.cs` عوض نشده. **اجرا روی SQL Server محلی راستی‌آزمایی شد** (۱۴۰۵/۰۸/۰۷): شمار ردیف‌ها و checksum همه‌ی جدول‌ها قبل و بعد یکسان؛ همه‌ی بررسی‌های بخش B صفر؛ اجرای دوباره بی‌اثر؛ rollback و اجرای دوباره بدون خطا. بسته‌ی جدید NexusCore هنوز در `packages` نیست.
 - فازهای بعدی: طبق پلن؛ این بخش بعد از هر فاز به‌روز می‌شود.
 
 ## تست‌های پایه
