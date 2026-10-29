@@ -1,3 +1,5 @@
+> **برنچ `feature/1405-08-07-orgNode` — ساختار سازمانی داینامیک (در حال کار).** توضیح هدف، وضعیت فعلی و تست‌های پایه: [ORG-NODE-BRANCH.md](ORG-NODE-BRANCH.md)
+
 # Tejarat Bank API
 
 The Tejarat Bank task-management API, built on the **NexusCore** platform packages — the same way
