@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>TejaratBank_API</RootNamespace>
-    <NexusCoreVersion>0.1.0.1405080703-mahdi</NexusCoreVersion>
+    <NexusCoreVersion>0.1.0.1405080704-mahdi</NexusCoreVersion>
   </PropertyGroup>
 
   <ItemGroup>
