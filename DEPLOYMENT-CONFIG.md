@@ -75,7 +75,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 | Database | Script |
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
-| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql` |
+| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql`, then `db/upgrade-10-org-nodes.sql` |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -90,6 +90,12 @@ position stays without one).
 Posts (upgrade 5): each post has a code (unique in its company) and one person. A position
 several people held in a deputy becomes one post each; people placed directly in a company with
 a position get a post there (the head's included); every post gets a number of its company.
+
+Structure nodes (upgrade 10): units get an optional parent, node type and validity period, companies a
+group/template/screen level, and posts the head's mark; new tables hold node types, rules, links and
+templates. Today's data keeps its meaning: every unit stays at the top of its company (no parent), every
+unit becomes a plain «واحد» node and each company's head post gets the head's mark. Run
+`db/check-upgrade-10.sql` before and after (section A must be identical); `db/upgrade-10-rollback.sql` undoes it.
 
 ## 7. Tasks are given to posts
 
