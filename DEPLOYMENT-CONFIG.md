@@ -131,7 +131,7 @@ appointments and ones from a later day) is lost; the appointment on now stays. I
 
 ### 6.1 Moving a production database to the dynamic structure
 
-Do this once, in this order. Nothing here changes what today's flat data means: every unit stays at
+Do this once, in this order (steps 10 to 14). Nothing here changes what today's flat data means: every unit stays at
 the top of its company, every company keeps its head and the people keep their managers.
 
 1. **Back up** the `TejaratBank` database.
@@ -146,6 +146,7 @@ the top of its company, every company keeps its head and the people keep their m
    sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-11-node-api.sql
    sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-12-templates.sql
    sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-13-node-details.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-14-appointments.sql
    ```
    With `Database:InitializeOrgStructureSchema` true (the default) the API makes the same changes at
    start-up; run the scripts when a DBA owns the schema.
@@ -158,7 +159,7 @@ the top of its company, every company keeps its head and the people keep their m
    what may sit under what), «ورود از اکسل», templates. Nothing nests until rules exist.
 
 **Undo**, newest first, only if needed (data made with the new features in the dropped columns and
-tables is lost): `db/upgrade-13-rollback.sql`, `db/upgrade-12-rollback.sql`,
+tables is lost): `db/upgrade-14-rollback.sql`, `db/upgrade-13-rollback.sql`, `db/upgrade-12-rollback.sql`,
 `db/upgrade-11-rollback.sql`, `db/upgrade-10-rollback.sql`. The table `organization.OrganizationUnits`
 keeps its name (the host checks it at start-up).
 
