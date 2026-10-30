@@ -75,7 +75,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 | Database | Script |
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
-| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql`, then `db/upgrade-10-org-nodes.sql`, then `db/upgrade-11-node-api.sql`, then `db/upgrade-12-templates.sql`, then `db/upgrade-13-node-details.sql` |
+| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql`, then `db/upgrade-10-org-nodes.sql`, then `db/upgrade-11-node-api.sql`, then `db/upgrade-12-templates.sql`, then `db/upgrade-13-node-details.sql`, then `db/upgrade-14-appointments.sql` |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -120,7 +120,13 @@ its own rules.
 Node details (upgrade 13): units get five optional columns (`NodeCode`, `LatinName`,
 `CorrespondenceTitle`, `Phone`, `Address`), empty for existing rows. The code column is named
 `NodeCode` on purpose: `check-upgrades.sql` recognises step 1 by the old `Code` column being gone.
-`db/upgrade-13-rollback.sql` undoes it. Importing nodes from an Excel/CSV file
+`db/upgrade-13-rollback.sql` undoes it.
+
+Appointments over time (upgrade 14): `UserPositions` gets `StartDate` and `EndDate`; today's rows
+start on the day they were saved and have no end, so everyone holds what they hold now. The unique
+index becomes «one open appointment per post». From then on, taking a post off someone ends their
+appointment and keeps it as history. `db/upgrade-14-rollback.sql` undoes it: the history (ended
+appointments and ones from a later day) is lost; the appointment on now stays. Importing nodes from an Excel/CSV file
 (`/api/org-structure/import/...`) accepts files up to 5 MB.
 
 ### 6.1 Moving a production database to the dynamic structure
