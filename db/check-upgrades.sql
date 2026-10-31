@@ -78,7 +78,10 @@ INSERT INTO @steps VALUES
      N'PostActings.StartDate and EndDate'),
  (19, N'upgrade-19-org-kinds.sql',
      CASE WHEN OBJECT_ID(N'org_structure.NodePersons', N'U') IS NOT NULL AND OBJECT_ID(N'org_structure.NodeHeads', N'U') IS NOT NULL THEN 1 ELSE 0 END,
-     N'NodePersons and NodeHeads');
+     N'NodePersons and NodeHeads'),
+ (20, N'upgrade-20-position-holds-unit.sql',
+     CASE WHEN EXISTS (SELECT 1 FROM [org_structure].[NodeTypeRules] r JOIN [org_structure].[NodeTypes] p ON p.[Id] = r.[ParentNodeTypeId] AND p.[Code] IN (N'kind_position', N'org_role') JOIN [org_structure].[NodeTypes] u ON u.[Id] = r.[ChildNodeTypeId] AND u.[Code] IN (N'kind_unit', N'org_post')) THEN 1 ELSE 0 END,
+     N'rule: position may hold a unit');
 
 PRINT N'== Upgrade steps';
 SELECT [Step], [Script], CASE [Applied] WHEN 1 THEN N'yes' ELSE N'NO' END AS [Applied], [Recognised by] FROM @steps ORDER BY [Step];
@@ -86,7 +89,7 @@ SELECT [Step], [Script], CASE [Applied] WHEN 1 THEN N'yes' ELSE N'NO' END AS [Ap
 DECLARE @firstMissing int = (SELECT MIN([Step]) FROM @steps WHERE [Applied] = 0);
 DECLARE @lastApplied int = (SELECT MAX([Step]) FROM @steps WHERE [Applied] = 1);
 IF @firstMissing IS NULL
-    PRINT N'== Result: up to date (all 19 steps applied).';
+    PRINT N'== Result: up to date (all 20 steps applied).';
 ELSE IF @lastApplied > @firstMissing
     PRINT N'== Result: steps are out of order - step ' + CAST(@firstMissing AS nvarchar(5)) + N' is missing but a later one is applied. Check before running anything.';
 ELSE
