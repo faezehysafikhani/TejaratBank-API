@@ -86,7 +86,7 @@ SELECT [Step], [Script], CASE [Applied] WHEN 1 THEN N'yes' ELSE N'NO' END AS [Ap
 DECLARE @firstMissing int = (SELECT MIN([Step]) FROM @steps WHERE [Applied] = 0);
 DECLARE @lastApplied int = (SELECT MAX([Step]) FROM @steps WHERE [Applied] = 1);
 IF @firstMissing IS NULL
-    PRINT N'== Result: up to date (all 18 steps applied).';
+    PRINT N'== Result: up to date (all 19 steps applied).';
 ELSE IF @lastApplied > @firstMissing
     PRINT N'== Result: steps are out of order - step ' + CAST(@firstMissing AS nvarchar(5)) + N' is missing but a later one is applied. Check before running anything.';
 ELSE
