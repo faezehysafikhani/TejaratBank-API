@@ -75,7 +75,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 | Database | Script |
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
-| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql`, then `db/upgrade-10-org-nodes.sql`, then `db/upgrade-11-node-api.sql`, then `db/upgrade-12-templates.sql`, then `db/upgrade-13-node-details.sql`, then `db/upgrade-14-appointments.sql` |
+| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql`, then `db/upgrade-10-org-nodes.sql`, then `db/upgrade-11-node-api.sql`, then `db/upgrade-12-templates.sql`, then `db/upgrade-13-node-details.sql`, then `db/upgrade-14-appointments.sql`, then `db/upgrade-15-company-profile.sql` |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
@@ -129,9 +129,15 @@ appointment and keeps it as history. `db/upgrade-14-rollback.sql` undoes it: the
 appointments and ones from a later day) is lost; the appointment on now stays. Importing nodes from an Excel/CSV file
 (`/api/org-structure/import/...`) accepts files up to 5 MB.
 
+Company profile (upgrade 15): `org_structure.Companies` gets eight optional columns (`Phone`, `Email`,
+`Website`, `NationalId`, `EconomicCode`, `Address`, `HeadTitle` - what the chart calls the head - and `Logo`,
+where its logo file is kept in the API's file storage). Empty for every existing company. A new company starts
+at the «advanced» level and gets an automatic code (`C-001`...) when none is given.
+`db/upgrade-15-rollback.sql` undoes it (the values are lost; logo files stay unused).
+
 ### 6.1 Moving a production database to the dynamic structure
 
-Do this once, in this order (steps 10 to 14). Nothing here changes what today's flat data means: every unit stays at
+Do this once, in this order (steps 10 to 15). Nothing here changes what today's flat data means: every unit stays at
 the top of its company, every company keeps its head and the people keep their managers.
 
 1. **Back up** the `TejaratBank` database.
@@ -147,6 +153,7 @@ the top of its company, every company keeps its head and the people keep their m
    sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-12-templates.sql
    sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-13-node-details.sql
    sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-14-appointments.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-15-company-profile.sql
    ```
    With `Database:InitializeOrgStructureSchema` true (the default) the API makes the same changes at
    start-up; run the scripts when a DBA owns the schema.
@@ -159,7 +166,7 @@ the top of its company, every company keeps its head and the people keep their m
    what may sit under what), «ورود از اکسل», templates. Nothing nests until rules exist.
 
 **Undo**, newest first, only if needed (data made with the new features in the dropped columns and
-tables is lost): `db/upgrade-14-rollback.sql`, `db/upgrade-13-rollback.sql`, `db/upgrade-12-rollback.sql`,
+tables is lost): `db/upgrade-15-rollback.sql`, `db/upgrade-14-rollback.sql`, `db/upgrade-13-rollback.sql`, `db/upgrade-12-rollback.sql`,
 `db/upgrade-11-rollback.sql`, `db/upgrade-10-rollback.sql`. The table `organization.OrganizationUnits`
 keeps its name (the host checks it at start-up).
 
