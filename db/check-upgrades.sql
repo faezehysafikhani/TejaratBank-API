@@ -75,7 +75,7 @@ INSERT INTO @steps VALUES
      N'calendar.Meetings and MeetingParticipants'),
  (18, N'upgrade-18-stand-in-period.sql',
      CASE WHEN COL_LENGTH(N'org_structure.PostActings', N'EndDate') IS NOT NULL THEN 1 ELSE 0 END,
-     N'PostActings.StartDate and EndDate',
+     N'PostActings.StartDate and EndDate'),
  (19, N'upgrade-19-org-kinds.sql',
      CASE WHEN OBJECT_ID(N'org_structure.NodePersons', N'U') IS NOT NULL AND OBJECT_ID(N'org_structure.NodeHeads', N'U') IS NOT NULL THEN 1 ELSE 0 END,
      N'NodePersons and NodeHeads');
