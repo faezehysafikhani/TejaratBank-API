@@ -174,7 +174,7 @@ public class MeetingHierarchyTests
     sealed class Current : ICurrentUserContext
     {
         public Guid? UserId{get;set;}public Guid? TenantId{get;set;}public string? Email=>null;public string? IpAddress=>null;
-        public HashSet<string> Permissions{get;}=["Tasks.View",MeetingPermissions.View,MeetingPermissions.Create,MeetingPermissions.Edit];
+        public HashSet<string> Permissions{get;}=["Tasks.View",MeetingPermissions.View,MeetingPermissions.Create,MeetingPermissions.Edit,MeetingPermissions.Delete];
         public bool HasPermission(string p)=>Permissions.Contains(p);
     }
     sealed class World : IDisposable

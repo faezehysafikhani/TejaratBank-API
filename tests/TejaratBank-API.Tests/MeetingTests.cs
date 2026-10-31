@@ -154,7 +154,7 @@ public class MeetingTests
     {
         var names=new CalendarPermissionCatalog().GetPermissions().Select(permission=>permission.Name)
             .Where(name => name.StartsWith("Meetings.", StringComparison.Ordinal)).ToHashSet();
-        Assert.Equal(new HashSet<string>{MeetingPermissions.View,MeetingPermissions.Create,MeetingPermissions.Edit,
+        Assert.Equal(new HashSet<string>{MeetingPermissions.View,MeetingPermissions.Create,MeetingPermissions.Edit,MeetingPermissions.Delete,
             MeetingPermissions.InviteHigher,MeetingPermissions.AccessAllPeople},names);
     }
 
@@ -248,7 +248,7 @@ public async Task Scheduling_RejectsParticipantOverlapEvenWhenOrganizersAndRooms
         using var w=new World();var b=WebApplication.CreateBuilder();b.WebHost.UseTestServer();
         b.Services.AddSingleton(w.Service);
         b.Services.AddAuthentication("test").AddScheme<AuthenticationSchemeOptions,HeaderAuth>("test",_=>{});
-        b.Services.AddAuthorization(o=> {foreach(var p in new[]{MeetingPermissions.View,MeetingPermissions.Create,MeetingPermissions.Edit,"Tasks.View"}) o.AddPolicy(p,x=>x.RequireAuthenticatedUser().RequireClaim("permission",p));});
+        b.Services.AddAuthorization(o=> {foreach(var p in new[]{MeetingPermissions.View,MeetingPermissions.Create,MeetingPermissions.Edit,MeetingPermissions.Delete,"Tasks.View"}) o.AddPolicy(p,x=>x.RequireAuthenticatedUser().RequireClaim("permission",p));});
         await using var app=b.Build();app.UseAuthentication();app.UseAuthorization();app.MapMeetingEndpoints();await app.StartAsync();
         var client=app.GetTestClient();const string url="/api/calendar/meetings?from=2026-10-01&to=2026-11-01";
         Assert.Equal(HttpStatusCode.Unauthorized,(await client.GetAsync(url)).StatusCode);
@@ -262,7 +262,7 @@ public async Task Scheduling_RejectsParticipantOverlapEvenWhenOrganizersAndRooms
     sealed class Current : ICurrentUserContext
     {
         public Guid? UserId{get;set;} public Guid? TenantId{get;set;}public string? Email=>null;public string? IpAddress=>null;
-        public HashSet<string> Permissions{get;}=["Tasks.View",MeetingPermissions.View,MeetingPermissions.Create,MeetingPermissions.Edit];
+        public HashSet<string> Permissions{get;}=["Tasks.View",MeetingPermissions.View,MeetingPermissions.Create,MeetingPermissions.Edit,MeetingPermissions.Delete];
         public bool HasPermission(string p)=>Permissions.Contains(p);
     }
     sealed class World : IDisposable
