@@ -1,4 +1,4 @@
--- Which of db/upgrade-1 .. upgrade-15 a database already has: read-only, changes nothing.
+-- Which of db/upgrade-1 .. upgrade-18 a database already has: read-only, changes nothing.
 -- Each step is recognised by what it adds (a table or column), so a database created whole by a newer
 -- version (no history rows) answers correctly too. Run the missing steps in order, from the first "no".
 --   sqlcmd -S <server> -d TejaratBank -I -f 65001 -i db/check-upgrades.sql
@@ -72,7 +72,10 @@ INSERT INTO @steps VALUES
      N'Users.Address, FatherName, BirthDate'),
  (17, N'upgrade-17-calendar-meetings.sql',
      CASE WHEN OBJECT_ID(N'calendar.Meetings', N'U') IS NOT NULL AND OBJECT_ID(N'calendar.MeetingParticipants', N'U') IS NOT NULL THEN 1 ELSE 0 END,
-     N'calendar.Meetings and MeetingParticipants');
+     N'calendar.Meetings and MeetingParticipants'),
+ (18, N'upgrade-18-stand-in-period.sql',
+     CASE WHEN COL_LENGTH(N'org_structure.PostActings', N'EndDate') IS NOT NULL THEN 1 ELSE 0 END,
+     N'PostActings.StartDate and EndDate');
 
 PRINT N'== Upgrade steps';
 SELECT [Step], [Script], CASE [Applied] WHEN 1 THEN N'yes' ELSE N'NO' END AS [Applied], [Recognised by] FROM @steps ORDER BY [Step];
@@ -80,7 +83,7 @@ SELECT [Step], [Script], CASE [Applied] WHEN 1 THEN N'yes' ELSE N'NO' END AS [Ap
 DECLARE @firstMissing int = (SELECT MIN([Step]) FROM @steps WHERE [Applied] = 0);
 DECLARE @lastApplied int = (SELECT MAX([Step]) FROM @steps WHERE [Applied] = 1);
 IF @firstMissing IS NULL
-    PRINT N'== Result: up to date (all 17 steps applied).';
+    PRINT N'== Result: up to date (all 18 steps applied).';
 ELSE IF @lastApplied > @firstMissing
     PRINT N'== Result: steps are out of order - step ' + CAST(@firstMissing AS nvarchar(5)) + N' is missing but a later one is applied. Check before running anything.';
 ELSE

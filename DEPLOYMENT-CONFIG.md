@@ -135,6 +135,12 @@ where its logo file is kept in the API's file storage). Empty for every existing
 at the «advanced» level and gets an automatic code (`C-001`...) when none is given.
 `db/upgrade-15-rollback.sql` undoes it (the values are lost; logo files stay unused).
 
+Stand-in for a set time (upgrade 18, `db/upgrade-18-stand-in-period.sql`): `org_structure.PostActings` gets
+`StartDate` and `EndDate` (both optional, empty for every existing stand-in). With an end date a stand-in
+(«تعیین جانشین» in a post's details) is on from its start until its end, also while the post has a holder
+(leave, a mission); without one it lasts while the post is vacant, as before. Only people of the post's own unit
+(or a unit below it) may stand in. `db/upgrade-18-rollback.sql` undoes it (stand-ins for a set time are removed).
+
 ### 6.1 Moving a production database to the dynamic structure
 
 Do this once, in this order (steps 10 to 15). Nothing here changes what today's flat data means: every unit stays at
@@ -154,6 +160,7 @@ the top of its company, every company keeps its head and the people keep their m
    sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-13-node-details.sql
    sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-14-appointments.sql
    sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-15-company-profile.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-18-stand-in-period.sql
    ```
    With `Database:InitializeOrgStructureSchema` true (the default) the API makes the same changes at
    start-up; run the scripts when a DBA owns the schema.
@@ -166,7 +173,7 @@ the top of its company, every company keeps its head and the people keep their m
    what may sit under what), «ورود از اکسل», templates. Nothing nests until rules exist.
 
 **Undo**, newest first, only if needed (data made with the new features in the dropped columns and
-tables is lost): `db/upgrade-15-rollback.sql`, `db/upgrade-14-rollback.sql`, `db/upgrade-13-rollback.sql`, `db/upgrade-12-rollback.sql`,
+tables is lost): `db/upgrade-18-rollback.sql`, `db/upgrade-15-rollback.sql`, `db/upgrade-14-rollback.sql`, `db/upgrade-13-rollback.sql`, `db/upgrade-12-rollback.sql`,
 `db/upgrade-11-rollback.sql`, `db/upgrade-10-rollback.sql`. The table `organization.OrganizationUnits`
 keeps its name (the host checks it at start-up).
 
@@ -232,6 +239,7 @@ Each one is on its own: turn off what is not wanted, the rest keeps working.
 | `LimitTaskAssignment` | yes | tasks only to one's own level and below (7.1) | «ارجاع فعالیت به همه‌ی سطوح سازمانی» |
 | `AssignTasksToPosts` | yes | tasks given to posts, «کارتابل جانشینی» (7) | «مدیریت کارتابل جانشینی» (every vacant post) |
 | `LimitToOwnCompany` | yes | everyone kept to their own company (7.3) | «دسترسی به همه‌ی شرکت‌ها» |
+| `LimitChatToHierarchy` | yes | direct chat only with one's peers (same manager, same unit), those below, one's manager and the manager's manager; people with no place are not limited | - |
 
 Work teams are always kept to one's own deputy with the org structure; «افزودن اعضای سایر
 معاونت‌ها به تیم کاری» lifts that (still within one's own company when 7.3 is on).
