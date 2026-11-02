@@ -80,11 +80,18 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 | Database | Script |
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
-| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql` |
+| Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql`, then `db/upgrade-10-org-nodes.sql`, then `db/upgrade-11-node-api.sql`, then `db/upgrade-12-templates.sql`, then `db/upgrade-13-node-details.sql`, then `db/upgrade-14-appointments.sql`, then `db/upgrade-15-company-profile.sql` |
 | Sign-in sessions (security update, any version before `0.1.0.1405080302-security3`) | `db/upgrade-9-refresh-token-family.sql` (the API also adds these two columns at start-up when `Database:SeedOnStartup` is `true`) |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
+```
+
+To see which of these steps a database already has (read-only, changes nothing; it recognises each
+step by the tables and columns it adds and says which script to start from):
+
+```
+sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/check-upgrades.sql
 ```
 
 Positions are per company, and a company's head is not chosen on the company: whoever is placed
@@ -96,6 +103,85 @@ position stays without one).
 Posts (upgrade 5): each post has a code (unique in its company) and one person. A position
 several people held in a deputy becomes one post each; people placed directly in a company with
 a position get a post there (the head's included); every post gets a number of its company.
+
+Structure nodes (upgrade 10): units get an optional parent, node type and validity period, companies a
+group/template/screen level, and posts the head's mark; new tables hold node types, rules, links and
+templates. Today's data keeps its meaning: every unit stays at the top of its company (no parent), every
+unit becomes a plain «واحد» node and each company's head post gets the head's mark. Run
+`db/check-upgrade-10.sql` before and after (section A must be identical); `db/upgrade-10-rollback.sql` undoes it.
+
+Node API (upgrade 11): units get their order among the units beside them, node types a colour and
+an icon. Existing data keeps its meaning (order 0: still by name; the default colour and icon).
+`db/upgrade-11-rollback.sql` undoes it. Putting a node under another node through
+`/api/org-structure/nodes` needs «what may sit under what» rules (`/node-type-rules`); with none, nodes
+stay at the top of their company, as before. (The temporary `OrgStructure:AllowNesting` switch of the
+trial phases is gone; an old `appsettings.json` that still has it is harmless.)
+
+Templates (upgrade 12): structure templates get a column for a saved template's content
+(`StructureTemplates.Content`, empty for existing rows). Nothing else changes; secondary links and
+the built-in templates use tables upgrade 10 already made. `db/upgrade-12-rollback.sql` undoes it
+(templates saved from a company are lost). A built-in template with nested nodes («بانکی») brings
+its own rules.
+
+Node details (upgrade 13): units get five optional columns (`NodeCode`, `LatinName`,
+`CorrespondenceTitle`, `Phone`, `Address`), empty for existing rows. The code column is named
+`NodeCode` on purpose: `check-upgrades.sql` recognises step 1 by the old `Code` column being gone.
+`db/upgrade-13-rollback.sql` undoes it.
+
+Appointments over time (upgrade 14): `UserPositions` gets `StartDate` and `EndDate`; today's rows
+start on the day they were saved and have no end, so everyone holds what they hold now. The unique
+index becomes «one open appointment per post». From then on, taking a post off someone ends their
+appointment and keeps it as history. `db/upgrade-14-rollback.sql` undoes it: the history (ended
+appointments and ones from a later day) is lost; the appointment on now stays. Importing nodes from an Excel/CSV file
+(`/api/org-structure/import/...`) accepts files up to 5 MB.
+
+Company profile (upgrade 15): `org_structure.Companies` gets eight optional columns (`Phone`, `Email`,
+`Website`, `NationalId`, `EconomicCode`, `Address`, `HeadTitle` - what the chart calls the head - and `Logo`,
+where its logo file is kept in the API's file storage). Empty for every existing company. A new company starts
+at the «advanced» level and gets an automatic code (`C-001`...) when none is given.
+`db/upgrade-15-rollback.sql` undoes it (the values are lost; logo files stay unused).
+
+Stand-in for a set time (upgrade 18, `db/upgrade-18-stand-in-period.sql`): `org_structure.PostActings` gets
+`StartDate` and `EndDate` (both optional, empty for every existing stand-in). With an end date a stand-in
+(«تعیین جانشین» in a post's details) is on from its start until its end, also while the post has a holder
+(leave, a mission); without one it lasts while the post is vacant, as before. Only people of the post's own unit
+(or a unit below it) may stand in. `db/upgrade-18-rollback.sql` undoes it (stand-ins for a set time are removed).
+
+### 6.1 Moving a production database to the dynamic structure
+
+Do this once, in this order (steps 10 to 15). Nothing here changes what today's flat data means: every unit stays at
+the top of its company, every company keeps its head and the people keep their managers.
+
+1. **Back up** the `TejaratBank` database.
+2. **Rehearse on a copy** (staging, restored from that backup) with the same steps; do production only
+   when the copy passes step 6.
+3. **Before:** `sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/check-upgrades.sql` says which
+   step to start from. For step 10 also save the output of `db/check-upgrade-10.sql` (section A).
+4. **Run the missing steps in order** (each is safe to run again; each needs `-I`, and the ones with
+   Persian text `-f 65001`):
+   ```
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-10-org-nodes.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-11-node-api.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-12-templates.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-13-node-details.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-14-appointments.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-15-company-profile.sql
+   sqlcmd -S <db-host> -d TejaratBank -I -f 65001 -i db/upgrade-18-stand-in-period.sql
+   ```
+   With `Database:InitializeOrgStructureSchema` true (the default) the API makes the same changes at
+   start-up; run the scripts when a DBA owns the schema.
+5. **After:** `db/check-upgrades.sql` must say all steps are applied, and `db/check-upgrade-10.sql`
+   section A must be identical to the one saved before (row counts and checksums), section B all zero.
+6. **Deploy the new NexusCore packages** (section 9) and start the API. Open the chart: it must look as
+   it did (flat companies, same heads, same managers). Then, in the UI, set a company's display level
+   to «پیشرفته» only where the new screens are wanted; nothing changes for the others.
+7. **Rules and templates** come after, as the organization decides: the «قواعد ساختار» tab (types and
+   what may sit under what), «ورود از اکسل», templates. Nothing nests until rules exist.
+
+**Undo**, newest first, only if needed (data made with the new features in the dropped columns and
+tables is lost): `db/upgrade-18-rollback.sql`, `db/upgrade-15-rollback.sql`, `db/upgrade-14-rollback.sql`, `db/upgrade-13-rollback.sql`, `db/upgrade-12-rollback.sql`,
+`db/upgrade-11-rollback.sql`, `db/upgrade-10-rollback.sql`. The table `organization.OrganizationUnits`
+keeps its name (the host checks it at start-up).
 
 ## 7. Tasks are given to posts
 
@@ -159,6 +245,7 @@ Each one is on its own: turn off what is not wanted, the rest keeps working.
 | `LimitTaskAssignment` | yes | tasks only to one's own level and below (7.1) | «ارجاع فعالیت به همه‌ی سطوح سازمانی» |
 | `AssignTasksToPosts` | yes | tasks given to posts, «کارتابل جانشینی» (7) | «مدیریت کارتابل جانشینی» (every vacant post) |
 | `LimitToOwnCompany` | yes | everyone kept to their own company (7.3) | «دسترسی به همه‌ی شرکت‌ها» |
+| `LimitChatToHierarchy` | yes | direct chat only with one's peers (same manager, same unit), those below, one's manager and the manager's manager; people with no place are not limited | - |
 
 Work teams are always kept to one's own deputy with the org structure; «افزودن اعضای سایر
 معاونت‌ها به تیم کاری» lifts that (still within one's own company when 7.3 is on).

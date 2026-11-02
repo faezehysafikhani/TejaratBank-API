@@ -1,3 +1,8 @@
+using Nexus.Calendar;
+using Nexus.Calendar.Infrastructure;
+using Nexus.Calendar.Infrastructure.Meetings;
+using Nexus.Integrations.CalendarTasks;
+using Nexus.Integrations.CalendarOrgStructure;
 using System.Text;
 
 using NexusCore.Application.Common;
@@ -88,9 +93,13 @@ builder.Services.AddOrganizationApplication();
 
 // Organization structure: companies, positions, manager / subordinates
 builder.Services.AddOrgStructure();
+builder.Services.AddCalendarApplication();
 
 // Task reports along the organization structure
 builder.Services.AddTaskReporting();
+builder.Services.AddCalendarMeetings(builder.Configuration);
+builder.Services.AddCalendarOrgStructureIntegration();
+builder.Services.AddCalendarTasksIntegration();
 
 
 // ======================================================
@@ -117,6 +126,7 @@ builder.Services.AddOrganizationInfrastructure(
 // Organization structure
 builder.Services.AddOrgStructureInfrastructure(
     builder.Configuration);
+builder.Services.AddCalendarInfrastructure(builder.Configuration);
 
 
 // ======================================================
@@ -455,6 +465,7 @@ if (builder.Configuration.IsUserGroupFeatureEnabled())
 // ======================================================
 
 app.MapTaskManagementEndpoints();
+app.MapMeetingEndpoints();
 
 
 // ======================================================
@@ -560,5 +571,11 @@ if (builder.Configuration.GetValue(
 // ======================================================
 // Run
 // ======================================================
+
+if (builder.Configuration.GetValue("Database:InitializeMeetingSchema", true))
+{
+    using var scope = app.Services.CreateScope();
+    await ModuleSchemaInitializer.EnsureCreatedAsync(scope.ServiceProvider.GetRequiredService<MeetingDbContext>(), CancellationToken.None);
+}
 
 app.Run();
