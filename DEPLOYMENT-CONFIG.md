@@ -76,6 +76,7 @@ Where schema changes must be run by a DBA instead, set it to `false` in
 |---|---|
 | New (no `organization` / `org_structure` tables yet) — after the API has started once | `db/new-database-org-structure.sql` |
 | Already has them (an earlier version) | `db/upgrade-1-organization.sql`, then `db/upgrade-2-org-structure.sql`, then `db/upgrade-3-unit-positions.sql`, then `db/upgrade-4-position-companies.sql`, then `db/upgrade-5-posts.sql`, then `db/upgrade-6-task-posts.sql`, then `db/upgrade-7-substitution.sql`, then `db/upgrade-8-post-parent.sql`, then `db/upgrade-9-task-history.sql`, then `db/upgrade-10-org-nodes.sql`, then `db/upgrade-11-node-api.sql`, then `db/upgrade-12-templates.sql`, then `db/upgrade-13-node-details.sql`, then `db/upgrade-14-appointments.sql`, then `db/upgrade-15-company-profile.sql` |
+| Sign-in sessions (NexusCore `0.1.0.1405081101-sessions`) | `upgrade-sessions.sql` of the NexusCore repository (`db/upgrade-sessions.sql`): the session tables and the columns they add. The API also creates them at start-up when `Database:SeedOnStartup` is `true`. |
 
 ```
 sqlcmd -S <db-host> -d TejaratBank -I -i db/upgrade-1-organization.sql
