@@ -15,14 +15,15 @@ GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20261107070326_AddPositionPermissions'
+    WHERE [MigrationId] = N'20261107071228_AddPositionPermissions'
 )
 BEGIN
     CREATE TABLE [org_structure].[PositionPermissions] (
+        [CompanyId] uniqueidentifier NOT NULL,
         [PositionId] uniqueidentifier NOT NULL,
         [PermissionName] nvarchar(200) NOT NULL,
         [TenantId] uniqueidentifier NOT NULL,
-        CONSTRAINT [PK_PositionPermissions] PRIMARY KEY ([PositionId], [PermissionName])
+        CONSTRAINT [PK_PositionPermissions] PRIMARY KEY ([CompanyId], [PositionId], [PermissionName])
     );
     CREATE TABLE [org_structure].[UnitPositionPermissions] (
         [UnitPositionId] uniqueidentifier NOT NULL,
@@ -37,11 +38,11 @@ GO
 
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20261107070326_AddPositionPermissions'
+    WHERE [MigrationId] = N'20261107071228_AddPositionPermissions'
 )
 BEGIN
     INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20261107070326_AddPositionPermissions', N'8.0.24');
+    VALUES (N'20261107071228_AddPositionPermissions', N'8.0.24');
 END;
 GO
 

@@ -9,11 +9,11 @@ GO
 BEGIN TRANSACTION;
 GO
 
-IF EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261107070326_AddPositionPermissions')
+IF EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261107071228_AddPositionPermissions')
 BEGIN
     DROP TABLE [org_structure].[UnitPositionPermissions];
     DROP TABLE [org_structure].[PositionPermissions];
-    DELETE FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261107070326_AddPositionPermissions';
+    DELETE FROM [__EFMigrationsHistory] WHERE [MigrationId] = N'20261107071228_AddPositionPermissions';
 END
 ELSE
     PRINT N'org_structure: upgrade-19 is not applied, nothing to roll back.';
