@@ -127,8 +127,7 @@ Appointments over time (upgrade 14): `UserPositions` gets `StartDate` and `EndDa
 start on the day they were saved and have no end, so everyone holds what they hold now. The unique
 index becomes «one open appointment per post». From then on, taking a post off someone ends their
 appointment and keeps it as history. `db/upgrade-14-rollback.sql` undoes it: the history (ended
-appointments and ones from a later day) is lost; the appointment on now stays. Importing nodes from an Excel/CSV file
-(`/api/org-structure/import/...`) accepts files up to 5 MB.
+appointments and ones from a later day) is lost; the appointment on now stays. (Importing nodes from an Excel/CSV file was removed from the product; the structure is built in the UI.)
 
 Company profile (upgrade 15): `org_structure.Companies` gets eight optional columns (`Phone`, `Email`,
 `Website`, `NationalId`, `EconomicCode`, `Address`, `HeadTitle` - what the chart calls the head - and `Logo`,
@@ -171,7 +170,7 @@ the top of its company, every company keeps its head and the people keep their m
    it did (flat companies, same heads, same managers). Then, in the UI, set a company's display level
    to «پیشرفته» only where the new screens are wanted; nothing changes for the others.
 7. **Rules and templates** come after, as the organization decides: the «قواعد ساختار» tab (types and
-   what may sit under what), «ورود از اکسل», templates. Nothing nests until rules exist.
+   what may sit under what), templates. Nothing nests until rules exist.
 
 **Undo**, newest first, only if needed (data made with the new features in the dropped columns and
 tables is lost): `db/upgrade-18-rollback.sql`, `db/upgrade-15-rollback.sql`, `db/upgrade-14-rollback.sql`, `db/upgrade-13-rollback.sql`, `db/upgrade-12-rollback.sql`,
